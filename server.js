@@ -14,14 +14,22 @@ const PORT = process.env.PORT || 5000;
 
 const start = async () => {
   try {
+    console.log("🚀 Starting server...");
+    console.log("PORT:", process.env.PORT);
+
     await connectDB();
+    console.log("✅ MongoDB ready");
+
     await connectRedis();
+    console.log("✅ Redis ready");
 
     server.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`🔥 Server running on 0.0.0.0:${PORT}`);
     });
   } catch (error) {
-    console.error("Server startup error:", error);
+    console.error("❌ Server startup error:");
+    console.error(error);
+
     process.exit(1);
   }
 };
