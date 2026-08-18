@@ -17,9 +17,14 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
 
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "https://lux-client-one.vercel.app"
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: allowedOrigins,
     credentials: true,
   })
 );
