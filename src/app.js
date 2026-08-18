@@ -19,13 +19,23 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URL,
     credentials: true,
   })
 );
 
+
 app.use(express.json());
 app.use(cookieParser());
+
+
+
+app.get("/", (req, res) => {
+  res.json({ message: "clothesserver API" });
+});
+
+
+
 
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationRoutes);
