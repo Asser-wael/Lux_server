@@ -12,6 +12,7 @@ import trustRoutes from "./routes/trustRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import accountRoutes from "./routes/accountRoutes.js";
 
 import { errorHandler } from "./middlewares/errorHandler.js";
 
@@ -50,6 +51,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/products", productdetailsRoutes);
 
+app.use("/api/account", accountRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/popular", popularRoutes);
 app.use("/api/orders", orderRoutes);
