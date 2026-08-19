@@ -1,36 +1,48 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-const protect = async (req, res, next) => {
+export const protect = async (req, res, next) => {
   try {
-    const token =
-      req.cookies.accessToken ||
-      req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers.authorization;
 
-
-    if (!token) {
-      console.log("NO TOKEN");
-      return res.json({ message: "Not authorized" });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-
-    req.user = await User.findById(decoded.id).select("-password");
-
-
-    next();
-  } catch (error) {
-
-    if (error.name === "TokenExpiredError") {
+    if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({
-        code: "TOKEN_EXPIRED",
-        message: "Token expired",
+        message: "No token provided",
+        code: "NO_TOKEN",
       });
     }
 
-    return res.status(401).json({
-      message: "Invalid token",
+    const token = authHeader.split(" ")[1];
+
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET
+      );
+
+      req.user = {
+        id: decoded.id,
+      };
+
+      next();
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({
+          message: "Access token expired",
+          code: "TOKEN_EXPIRED",
+        });
+      }
+
+      return res.status(401).json({
+        message: "Invalid token",
+        code: "INVALID_TOKEN",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Server error",
     });
   }
 };
