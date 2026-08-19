@@ -17,6 +17,8 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
 
+app.set("trust proxy", 1); 
+
 const allowedOrigins = [
   process.env.CLIENT_URL,
   "https://lux-client-one.vercel.app"
@@ -25,14 +27,12 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: allowedOrigins,
-    credentials: true,
+    credentials: true, // يسمح بنقل الكوكيز
   })
 );
 
-
 app.use(express.json());
 app.use(cookieParser());
-
 
 
 app.get("/", (req, res) => {
