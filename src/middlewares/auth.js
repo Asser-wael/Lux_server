@@ -90,5 +90,3 @@ export const optionalAuthMiddleware = (req, res, next) => {
 
   }
 };
-
-export { protect };
