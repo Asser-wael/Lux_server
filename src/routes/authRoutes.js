@@ -4,21 +4,22 @@ import { optionalAuthMiddleware, protect } from "../middlewares/auth.js";
 import Subscription from "../models/Subscription.js";
 const router = express.Router();
 
+router.post("/register", register);
 
-router.post("/register", register)
+router.post("/login", login);
 
-router.post("/login", login)
+router.get("/user", optionalAuthMiddleware, getUser);
 
-router.get("/user", optionalAuthMiddleware, getUser)
+router.post("/refresh", refresh);
 
-router.post("/refresh", refresh)
 
-router.post("/logout", protect, async (req, res) => {
+router.post("/logout", optionalAuthMiddleware, async (req, res) => {
   try {
-    await Subscription.findOneAndDelete({
-      user: req.user.id,
-    });
-    console.log(process.env.NODE_ENV);
+    if (req.user?.id) {
+      await Subscription.findOneAndDelete({
+        user: req.user.id,
+      });
+    }
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
@@ -37,4 +38,5 @@ router.post("/logout", protect, async (req, res) => {
     });
   }
 });
+
 export default router;
