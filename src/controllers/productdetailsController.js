@@ -109,14 +109,18 @@ export const addProductReview = async (req, res) => {
       });
     }
 
-    if (!comment || !comment.trim()) {
+    const cleanComment = comment?.trim();
+
+    if (!cleanComment) {
       return res.status(400).json({
         success: false,
         message: "Comment is required.",
       });
     }
 
-    if (!req.user?.id) {
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
       return res.status(401).json({
         success: false,
         message: "You must be logged in to review.",
@@ -132,8 +136,6 @@ export const addProductReview = async (req, res) => {
       });
     }
 
-    const userId = req.user._id;
-
     const existingReview = product.reviews.find(
       (review) =>
         review.user?.toString() === userId.toString()
@@ -141,13 +143,14 @@ export const addProductReview = async (req, res) => {
 
     if (existingReview) {
       existingReview.rating = numericRating;
-      existingReview.comment = comment.trim();
+      existingReview.comment = cleanComment;
+      existingReview.updatedAt = new Date();
     } else {
       product.reviews.push({
         user: userId,
         name: req.user.name,
         rating: numericRating,
-        comment: comment.trim(),
+        comment: cleanComment,
       });
     }
 
@@ -155,20 +158,24 @@ export const addProductReview = async (req, res) => {
 
     const totalRating = product.reviews.reduce(
       (total, review) =>
-        total + Number(review.rating),
+        total + Number(review.rating || 0),
       0
     );
 
     product.rating =
-      totalRating / product.numReviews;
+      product.numReviews > 0
+        ? Number(
+            (totalRating / product.numReviews).toFixed(1)
+          )
+        : 0;
 
     await product.save();
 
-    // Clear both product caches
-    await redis.del(
-      `product:${id}`,
-      `product-details:${id}`
-    );
+    // Clear caches
+    await Promise.all([
+      redis.del(`product:${id}`),
+      redis.del(`product-details:${id}`),
+    ]);
 
     await product.populate("category", "name");
     await product.populate("reviews.user", "name");
