@@ -44,68 +44,38 @@ export const checkout = async (req, res) => {
             imageUrl = result.secure_url;
         }
 
-        const {
-            fullName,
-            phone,
-            city,
-            address,
-            paymentMethod,
-            senderName,
-            senderPhone,
-            transactionId,
-        } = req.body;
-console.log(            fullName,
-            phone,
-            city,
-            address,
-            paymentMethod,
-            senderName,
-            senderPhone,
-            transactionId,);
+        const { fullName, phone, city, address, paymentMethod,
+            senderName, senderPhone, transactionId, items, isBuyNow } = req.body;
+        // ...
 
         const userId = req.user?.id;
-
         if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: "Unauthorized",
-            });
+            return res.status(401).json({ success: false, message: "Unauthorized" });
         }
 
         const user = await User.findById(userId);
-
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
+            return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        if (!user.cart?.length) {
-            return res.status(400).json({
-                success: false,
-                message: "Cart is empty",
-            });
+        // اقرأ الـ items من الريكوست بدل ما تعتمد على user.cart فقط
+        const requestedItems = JSON.parse(items || "[]");
+
+        if (!requestedItems.length) {
+            return res.status(400).json({ success: false, message: "No items to checkout" });
         }
 
         let totalPrice = 0;
         const orderItems = [];
         const productsToUpdate = [];
 
-        for (const item of user.cart) {
+        for (const item of requestedItems) {
             const product = await Product.findById(item.product);
-
             if (!product) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Product not found",
-                });
+                return res.status(404).json({ success: false, message: "Product not found" });
             }
 
-            const variant = product.variants.find(
-                (v) => v.color?.name === item.color
-            );
-
+            const variant = product.variants.find((v) => v.color?.name === item.color);
             if (!variant) {
                 return res.status(400).json({
                     success: false,
@@ -113,10 +83,7 @@ console.log(            fullName,
                 });
             }
 
-            const size = variant.sizes.find(
-                (s) => s.size === item.size
-            );
-
+            const size = variant.sizes.find((s) => s.size === item.size);
             if (!size) {
                 return res.status(400).json({
                     success: false,
@@ -131,11 +98,7 @@ console.log(            fullName,
                 });
             }
 
-            const price =
-                size.offerPrice != null
-                    ? size.offerPrice
-                    : size.price;
-
+            const price = size.offerPrice != null ? size.offerPrice : size.price;
             totalPrice += price * item.quantity;
 
             orderItems.push({
@@ -148,13 +111,9 @@ console.log(            fullName,
                 image: product.image,
             });
 
-            productsToUpdate.push({
-                product,
-                variant,
-                size,
-                quantity: item.quantity,
-            });
+            productsToUpdate.push({ product, variant, size, quantity: item.quantity });
         }
+
 
         // --------------------------------------------------------
         // Update stock & notify if low stock
@@ -223,25 +182,27 @@ console.log(            fullName,
                     : undefined,
             totalPrice,
         });
-        user.cart = [];
+
+        if (isBuyNow !== "true") user.cart = [];
+
         user.orders.push(order._id);
         await user.save();
-        
+
         // --------------------------------------------------------
         // SHOPIFY-STYLE NOTIFICATION PAYLOADS
         // --------------------------------------------------------
         const orderCode = order._id.toString().slice(-6).toUpperCase();
         const itemCount = orderItems.reduce((acc, curr) => acc + curr.quantity, 0);
         const paymentLabel = paymentMethod === "wallet" ? "E-Wallet" : "Cash on Delivery";
-        
+
         // Admin Notification Message (Shopify Merchant Style)
         const adminPushTitle = `🛍️ New Order #${orderCode}`;
         const adminPushBody = `${fullName} placed an order for ${itemCount} item(s) • Total: ${totalPrice} EGP (${paymentLabel})`;
-        
+
         // User Notification Message (Shopify Customer Style)
         const userPushTitle = `🎉 Order Confirmed! #${orderCode}`;
         const userPushBody = `Thank you for your order! We've received your payment request of ${totalPrice} EGP and are processing it now.`;
-        
+
         // Realtime WebSockets Emit to Admin Room
         io.to("adminroom").emit("newOrder", {
             ...order.toObject(),
