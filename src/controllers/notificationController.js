@@ -388,7 +388,7 @@ export const deleteUserNotification = async (req, res) => {
 export const saveSubscription = async (req, res) => {
     try {
         const { subscription } = req.body;
-
+        const user = await User.findById(req.user.id)
         if (!subscription?.endpoint || !subscription?.keys) {
             return res.status(400).json({
                 success: false,
@@ -402,7 +402,7 @@ export const saveSubscription = async (req, res) => {
             },
             {
                 user: req.user.id,
-                role: "admin",
+                role: user.role == "admin" ? "admin" : "user",
                 endpoint: subscription.endpoint,
                 keys: subscription.keys,
             },

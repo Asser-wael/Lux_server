@@ -92,7 +92,6 @@ router.delete(
 router.post(
     "/subscribe",
     protect,
-    adminMiddleware,
     saveSubscription
 );
 
