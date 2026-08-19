@@ -3,12 +3,19 @@ import { Server } from "socket.io";
 let io;
 let onlineUsers = 0;
 
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "https://lux-client-one.vercel.app"
+].filter(Boolean);
+
+
+    
 
 
 const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL,
+      origin: allowedOrigins,
       credentials: true,
     },
   });
