@@ -116,7 +116,7 @@ export const addProductReview = async (req, res) => {
       });
     }
 
-    if (!req.user?._id) {
+    if (!req.user?.id) {
       return res.status(401).json({
         success: false,
         message: "You must be logged in to review.",
