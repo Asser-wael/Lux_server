@@ -1,16 +1,11 @@
 import { Server } from "socket.io";
 
 let io;
-let onlineUsers = 0;
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
   "https://lux-client-one.vercel.app"
 ].filter(Boolean);
-
-
-    
-
 
 const initSocket = (server) => {
   io = new Server(server, {
@@ -21,7 +16,8 @@ const initSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    onlineUsers++;
+    // حساب المستخدمين المتصلين بدقة عبر engine.clientsCount
+    const onlineUsers = io.engine.clientsCount;
     console.log("User connected:", socket.id);
     io.emit("onlineUsers", onlineUsers);
     
@@ -29,12 +25,17 @@ const initSocket = (server) => {
       socket.join("adminroom");
       console.log(`${socket.id} joined adminroom`);
     });
+
     socket.on("userOrder", (idOrder) => {
+      if (!idOrder) return;
+      // ينضم للغرفة بالصيغة المقابلة لـ changeStatus
       socket.join(`userOrder-${idOrder}`);
-    })
+      console.log(`${socket.id} joined room: userOrder-${idOrder}`);
+    });
+
     socket.on("disconnect", () => {
-      onlineUsers--;
-      io.emit("onlineUsers", onlineUsers);
+      const activeUsers = io.engine.clientsCount;
+      io.emit("onlineUsers", activeUsers);
       console.log("User disconnected:", socket.id);
     });
   });
