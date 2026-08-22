@@ -16,8 +16,7 @@ const initSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    // حساب المستخدمين المتصلين بدقة عبر engine.clientsCount
-    const onlineUsers = io.engine.clientsCount;
+    const onlineUsers = 0;
     console.log("User connected:", socket.id);
     io.emit("onlineUsers", onlineUsers);
     
@@ -28,7 +27,7 @@ const initSocket = (server) => {
 
     socket.on("userOrder", (idOrder) => {
       if (!idOrder) return;
-      // ينضم للغرفة بالصيغة المقابلة لـ changeStatus
+      
       socket.join(`userOrder-${idOrder}`);
       console.log(`${socket.id} joined room: userOrder-${idOrder}`);
     });
