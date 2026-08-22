@@ -4,7 +4,7 @@ let io;
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
-  "https://lux-client-one.vercel.app"
+  "https://lux-client-one.vercel.app",
 ].filter(Boolean);
 
 const initSocket = (server) => {
@@ -16,26 +16,47 @@ const initSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    const onlineUsers = 0;
     console.log("User connected:", socket.id);
+
+    // عدد المستخدمين المتصلين حاليًا
+    const onlineUsers = io.engine.clientsCount;
+
     io.emit("onlineUsers", onlineUsers);
-    
+
+    // =========================
+    // ADMIN ROOM
+    // =========================
     socket.on("admin", () => {
       socket.join("adminroom");
+
       console.log(`${socket.id} joined adminroom`);
     });
 
+    // =========================
+    // USER ORDER ROOM
+    // =========================
     socket.on("userOrder", (idOrder) => {
       if (!idOrder) return;
-      
-      socket.join(`userOrder-${idOrder}`);
-      console.log(`${socket.id} joined room: userOrder-${idOrder}`);
+
+      const room = `userOrder-${idOrder}`;
+
+      socket.join(room);
+
+      console.log(`${socket.id} joined room: ${room}`);
     });
 
-    socket.on("disconnect", () => {
+    // =========================
+    // DISCONNECT
+    // =========================
+    socket.on("disconnect", (reason) => {
       const activeUsers = io.engine.clientsCount;
+
       io.emit("onlineUsers", activeUsers);
-      console.log("User disconnected:", socket.id);
+
+      console.log(
+        `User disconnected: ${socket.id} | Reason: ${reason}`
+      );
+      console.log("Online users:", activeUsers);
     });
   });
 
@@ -43,7 +64,10 @@ const initSocket = (server) => {
 };
 
 const getIO = () => {
-  if (!io) throw new Error("Socket.io not initialized");
+  if (!io) {
+    throw new Error("Socket.io not initialized");
+  }
+
   return io;
 };
 
