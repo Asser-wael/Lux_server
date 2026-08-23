@@ -196,8 +196,8 @@ export const checkout = async (req, res) => {
         const paymentLabel = paymentMethod === "wallet" ? "E-Wallet" : "Cash on Delivery";
 
         // Admin Notification Message (Shopify Merchant Style)
-        const adminPushTitle = `🛍️ New Order #${orderCode}`;
-        const adminPushBody = `${fullName} placed an order for ${itemCount} item(s) • Total: ${totalPrice} EGP (${paymentLabel})`;
+        const adminPushTitle = `New Order #${orderCode}`;
+        const adminPushBody = `${itemCount} item(s) • Total: ${totalPrice} EGP (${paymentLabel}),${fullName} placed an order`;
 
         // User Notification Message (Shopify Customer Style)
         const userPushTitle = `🎉 Order Confirmed! #${orderCode}`;
