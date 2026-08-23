@@ -117,8 +117,7 @@ export const addProductReview = async (req, res) => {
         message: "Comment is required.",
       });
     }
-
-    const userId = req.user?._id || req.user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({
@@ -126,7 +125,10 @@ export const addProductReview = async (req, res) => {
         message: "You must be logged in to review.",
       });
     }
-
+    const currentUser = await User.findById(userId).select("name");
+    if (!currentUser) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
     const product = await Product.findById(id);
 
     if (!product || !product.isActive) {
@@ -148,7 +150,7 @@ export const addProductReview = async (req, res) => {
     } else {
       product.reviews.push({
         user: userId,
-        name: req.user.name,
+        name: currentUser.name,
         rating: numericRating,
         comment: cleanComment,
       });
@@ -165,8 +167,8 @@ export const addProductReview = async (req, res) => {
     product.rating =
       product.numReviews > 0
         ? Number(
-            (totalRating / product.numReviews).toFixed(1)
-          )
+          (totalRating / product.numReviews).toFixed(1)
+        )
         : 0;
 
     await product.save();

@@ -13,23 +13,24 @@ const router = express.Router();
 
 router.post(
     "/addCategory",
-    upload.single("image"),
     protect,
     adminMiddleware,
+    upload.single("image"),
     addCategory
+);
+
+router.put(
+    "/updateCategory/:id",
+    protect,
+    adminMiddleware,
+    upload.single("image"),
+    updateCategory
 );
 router.delete(
     "/deleteCategory",
     protect,
     adminMiddleware,
     deleteCategory
-);
-router.put(
-    "/updateCategory/:id",
-    upload.single("image"),
-    protect,
-    adminMiddleware,
-    updateCategory
 );
 router.get(
     "/categories",

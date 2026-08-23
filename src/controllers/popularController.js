@@ -22,7 +22,6 @@ export const getPopularProducts = async (req, res) => {
             success: true,
             products,
         });
-        console.log(5);
 
     } catch (error) {
         return res.status(500).json({
@@ -36,11 +35,10 @@ export const getPopularProducts = async (req, res) => {
 export const addPopularProduct = async (req, res) => {
     try {
         const { id } = req.body;
-        console.log(1);
 
+        if (!id) return res.status(400).json({ success: false, message: "Product id is required." });
 
         const exists = await PopularModel.findOne({ id });
-        console.log(2);
 
         if (exists) {
             return res.json({
@@ -48,13 +46,10 @@ export const addPopularProduct = async (req, res) => {
                 message: "Product already exists.",
             });
         }
-        console.log(3);
 
         const popular = await PopularModel.create({ id });
 
-        console.log(4);
         await redis.del(POPULAR_CACHE_KEY);
-        console.log(5);
 
         return res.status(201).json({
             success: true,
@@ -74,6 +69,7 @@ export const addPopularProduct = async (req, res) => {
 export const deletePopularProduct = async (req, res) => {
     try {
         const { id } = req.params;
+        if (!id) return res.status(400).json({ success: false, message: "Product id is required." });
 
         await PopularModel.deleteOne({ id });
 

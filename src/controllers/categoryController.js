@@ -171,7 +171,7 @@ export const getCategories = async (req, res) => {
 
         const categories = await Category.find();
 
-        await redis.set(CATEGORIES_CACHE_KEY, JSON.stringify(categories), "EX", 600);
+        await redis.setEx(CATEGORIES_CACHE_KEY, 600, JSON.stringify(categories));
 
         return res.status(200).json({
             success: true,
