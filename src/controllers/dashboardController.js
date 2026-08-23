@@ -36,11 +36,11 @@ export const getDashboardCards = async (req, res, next) => {
 const getProfitAggregation = async (matchStage) => {
   return Order.aggregate([
     { $match: matchStage },
-    { $unwind: "$orderItems" },
+    { $unwind: "$items" },   // ✅ بدل $orderItems
     {
       $lookup: {
         from: "products",
-        localField: "orderItems.product",
+        localField: "items.product",   // ✅ بدل orderItems.product
         foreignField: "_id",
         as: "productInfo",
       },
@@ -49,18 +49,17 @@ const getProfitAggregation = async (matchStage) => {
     { $unwind: "$productInfo.variants" },
     {
       $match: {
-        $expr: { $eq: ["$productInfo.variants.color.name", "$orderItems.color"] },
+        $expr: { $eq: ["$productInfo.variants.color.name", "$items.color"] }, // ✅
       },
     },
     { $unwind: "$productInfo.variants.sizes" },
     {
       $match: {
-        $expr: { $eq: ["$productInfo.variants.sizes.size", "$orderItems.size"] },
+        $expr: { $eq: ["$productInfo.variants.sizes.size", "$items.size"] }, // ✅
       },
     },
     {
       $addFields: {
-        // #لو فيه offerPrice فعلي (مش فاضي ومش null) بنستخدمه، غير كده بنستخدم الـ price العادي
         sellPrice: {
           $cond: [
             {
@@ -79,7 +78,7 @@ const getProfitAggregation = async (matchStage) => {
       $addFields: {
         itemProfit: {
           $multiply: [
-            "$orderItems.quantity",
+            "$items.quantity",   // ✅ بدل orderItems.quantity
             { $subtract: ["$sellPrice", "$productInfo.variants.sizes.costPrice"] },
           ],
         },
@@ -248,7 +247,7 @@ export const getLatestOrders = async (req, res, next) => {
   try {
     const orders = await Order.find()
       .sort({ createdAt: -1 })
-      .limit(5)
+      .limit(6)
       .populate("user", "name email");
 
     res.json(orders);
