@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import { adminMiddleware, protect } from "../middlewares/auth";
 
 let io;
 
@@ -26,7 +27,7 @@ const initSocket = (server) => {
     // =========================
     // ADMIN ROOM
     // =========================
-    socket.on("admin", () => {
+    socket.on("admin",  protect, adminMiddleware ,() => {
       socket.join("adminroom");
 
       console.log(`${socket.id} joined adminroom`);
@@ -35,7 +36,7 @@ const initSocket = (server) => {
     // =========================
     // USER ORDER ROOM
     // =========================
-    socket.on("userOrder", (idOrder) => {
+    socket.on("userOrder", protect, (idOrder) => {
       if (!idOrder) return;
 
       const room = `userOrder-${idOrder}`;

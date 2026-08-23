@@ -11,33 +11,31 @@ export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    if (password.length < 6) {
+    if (!password || password.length < 6) {
       return res.status(400).json({ message: "Password too short", type: "error" });
     }
 
-    const exist = await UserModel.findOne({ email })
+    const normalizedEmail = email?.trim().toLowerCase();
 
+    const exist = await UserModel.findOne({ email: normalizedEmail });
     if (exist) {
-      return res.json({ message: "User exists!", type: "error" })
+      return res.status(409).json({ message: "User exists!", type: "error" });
     }
 
     await UserModel.create({
       name,
-      email,
+      email: normalizedEmail,
       password,
-      isVerified: true, //////////////////////////////
+      isVerified: true,
       role: "user",
-      // verifyOtp,
-      // verifyOtpExpire: Date.now() + 10 * 60 * 1000
     });
+
     res.status(201).json({ message: "Registered", type: "success" });
-
   } catch (error) {
-
-    console.log(error)
-
+    console.log(error);
+    res.status(500).json({ message: "Server error", type: "error" }); // ✅ لازم ترجع response
   }
-}
+};
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -93,10 +91,6 @@ export const getUser = async (req, res) => {
 };
 export const refresh = async (req, res) => {
   try {
-    console.log("Refresh Cookie:", req.cookies.refreshToken);
-    console.log("Headers:", req.headers);
-    console.log("Cookies:", req.cookies);
-
     const token = req.cookies.refreshToken;
 
     if (!token) {
@@ -124,11 +118,8 @@ export const refresh = async (req, res) => {
       accessToken,
     });
 
-  } catch (error) {
-    console.log(error);
-
-    res.status(403).json({
-      message: error.message,
-    });
-  }
+} catch (error) {
+  console.log(error.name);
+  res.status(403).json({ message: "Invalid or expired refresh token" });
+}
 };

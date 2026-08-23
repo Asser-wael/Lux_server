@@ -49,17 +49,19 @@ export const protect = async (req, res, next) => {
 export const adminMiddleware = async (req, res, next) => {
   try {
     if (!req.user) {
-      return res.json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Unauthorized" });
     }
+
     const user = await User.findById(req.user.id);
-    if (user.role !== "admin") {
-      return res.status(403).json({
-        message: "No admin access"
-      });
+
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "No admin access" });
     }
+
     next();
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 export const optionalAuthMiddleware = (req, res, next) => {
