@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
 let io;
 
@@ -11,149 +12,100 @@ const allowedOrigins = [
 const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: (origin, callback) => {
-        // يسمح للـ requests بدون origin مثل Postman
-        if (!origin) {
-          return callback(null, true);
-        }
-
-        if (allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        }
-
-        console.log("❌ Socket CORS blocked:", origin);
-
-        return callback(new Error("Not allowed by CORS"));
-      },
-
+      origin: allowedOrigins,
       credentials: true,
-
-      methods: ["GET", "POST"],
     },
   });
 
-  // =========================
-  // SOCKET AUTH
-  // =========================
-
-  io.use((socket, next) => {
+  // ==========================================
+  // SOCKET AUTHENTICATION
+  // ==========================================
+  io.use(async (socket, next) => {
     try {
-      const token =
-        socket.handshake.auth?.token ||
-        socket.handshake.headers?.authorization?.replace(
-          "Bearer ",
-          ""
-        );
+      const token = socket.handshake.auth?.token;
 
       if (!token) {
         return next(new Error("Authentication required"));
       }
 
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET
-      );
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      socket.user = decoded;
+      if (!decoded) {
+        return next(new Error("Invalid token"));
+      }
+
+      // Only trust the id from the token — role is fetched fresh below,
+      // same as the HTTP adminMiddleware does.
+      socket.user = { id: decoded.id };
 
       next();
     } catch (error) {
-      console.log("❌ Socket auth error:", error.message);
-
-      next(new Error("Invalid token"));
+      console.error("Socket authentication error:", error.message);
+      next(new Error("Authentication failed"));
     }
   });
 
-  // =========================
+  // ==========================================
   // CONNECTION
-  // =========================
-
+  // ==========================================
   io.on("connection", (socket) => {
-    console.log("✅ User connected:", socket.id);
+    // Every authenticated socket automatically joins a room scoped to its
+    // own user id — no client-side "please join my order's room" step
+    // needed, and nothing here trusts an id the client supplies, so there
+    // is no room a user could ask to join that isn't already theirs.
+    // Re-runs on every reconnect for free, since "connection" fires again
+    // each time the client reconnects.
+    if (socket.user?.id) {
+      socket.join(`user:${socket.user.id}`);
+    }
 
-    // =========================
+    // ==========================================
     // ONLINE USERS
-    // =========================
-
+    // ==========================================
     const onlineUsers = io.engine.clientsCount;
-
     io.emit("onlineUsers", onlineUsers);
 
-    // =========================
+    // ==========================================
     // ADMIN ROOM
-    // =========================
+    // ==========================================
+    socket.on("admin", async () => {
+      try {
+        if (!socket.user) return;
 
-    socket.on("admin", () => {
-      if (socket.user?.role !== "admin") {
-        console.log(
-          `❌ Unauthorized admin room: ${socket.id}`
-        );
+        const user = await User.findById(socket.user.id);
 
-        return;
+        if (!user || user.role !== "admin") {
+          console.log(`Unauthorized admin room attempt: ${socket.id}`);
+          return;
+        }
+
+        socket.join("adminroom");
+        console.log(`${socket.id} joined adminroom`);
+      } catch (error) {
+        console.error("Admin room error:", error.message);
       }
-
-      socket.join("adminroom");
-
-      console.log(
-        `👑 ${socket.id} joined adminroom`
-      );
     });
 
-    // =========================
-    // USER ORDER ROOM
-    // =========================
-
-    socket.on("userOrder", (idOrder) => {
-      if (!idOrder) return;
-
-      const room = `userOrder-${idOrder}`;
-
-      socket.join(room);
-
-      console.log(
-        `📦 ${socket.id} joined room: ${room}`
-      );
-    });
-
-    // =========================
+    // ==========================================
     // DISCONNECT
-    // =========================
-
-    socket.on("disconnect", (reason) => {
-      const activeUsers =
-        io.engine.clientsCount;
-
+    // ==========================================
+    socket.on("disconnect", () => {
+      const activeUsers = io.engine.clientsCount;
       io.emit("onlineUsers", activeUsers);
-
-      console.log(
-        `❌ User disconnected: ${socket.id} | Reason: ${reason}`
-      );
-
-      console.log(
-        "Online users:",
-        activeUsers
-      );
     });
   });
 
   return io;
 };
 
-// =========================
+// ==========================================
 // GET IO
-// =========================
-
+// ==========================================
 const getIO = () => {
   if (!io) {
-    throw new Error(
-      "Socket.io not initialized"
-    );
+    throw new Error("Socket.io not initialized");
   }
-
   return io;
 };
 
-export {
-  initSocket,
-  getIO,
-};
+export { initSocket, getIO };
