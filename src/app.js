@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
 
 import dashboardRoutes from "./routes/dashboardRoutes.js";
@@ -60,11 +59,7 @@ app.use(
 
 app.use(cookieParser());
 
-// =========================
-// Mongo Sanitize
-// =========================
 
-app.use(mongoSanitize());
 
 // =========================
 // Rate Limit
