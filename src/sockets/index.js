@@ -5,7 +5,7 @@ let io;
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
-  "https://lux-client-one.vercel.app",
+  "https://lux.cmcsweb.online",
 ].filter(Boolean);
 
 const initSocket = (server) => {

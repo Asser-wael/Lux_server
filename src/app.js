@@ -22,7 +22,7 @@ app.set("trust proxy", 1);
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
-  "https://lux-client-one.vercel.app"
+  "https://lux.cmcsweb.online"
 ].filter(Boolean);
 
 app.use(
