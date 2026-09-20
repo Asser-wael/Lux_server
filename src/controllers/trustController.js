@@ -3,8 +3,8 @@ import cloudinary from "../config/cloudinary.js";
 import redis from "../config/redis.js";
 import Trust from "../models/Turst.js";
 
-const CACHE_KEY = "trust:all";
-const CACHE_TTL = 60 * 60; // ساعة واحدة
+const CACHE_KEY = "Lux:trust:all";
+const CACHE_TTL = 60 * 60;
 
 const uploadToCloudinary = (buffer, folder = "trust") =>
   new Promise((resolve, reject) => {
@@ -12,6 +12,7 @@ const uploadToCloudinary = (buffer, folder = "trust") =>
       { folder },
       (err, result) => (err ? reject(err) : resolve(result))
     );
+
     streamifier.createReadStream(buffer).pipe(stream);
   });
 
@@ -19,6 +20,7 @@ const uploadToCloudinary = (buffer, folder = "trust") =>
 export const getTrust = async (req, res) => {
   try {
     const cached = await redis.get(CACHE_KEY);
+
     if (cached) {
       return res.status(200).json({
         success: true,
@@ -27,9 +29,15 @@ export const getTrust = async (req, res) => {
       });
     }
 
-    const trustItems = await Trust.find().sort({ createdAt: -1 });
+    const trustItems = await Trust.find()
+      .sort({ createdAt: -1 });
 
-    await redis.set(CACHE_KEY, JSON.stringify(trustItems), "EX", CACHE_TTL);
+    await redis.set(
+      CACHE_KEY,
+      JSON.stringify(trustItems),
+      "EX",
+      CACHE_TTL
+    );
 
     return res.status(200).json({
       success: true,
@@ -88,6 +96,7 @@ export const updateTrust = async (req, res) => {
     const { title } = req.body;
 
     const trust = await Trust.findById(id);
+
     if (!trust) {
       return res.status(404).json({
         success: false,
@@ -99,12 +108,16 @@ export const updateTrust = async (req, res) => {
       if (trust.imageId) {
         await cloudinary.uploader.destroy(trust.imageId);
       }
+
       const result = await uploadToCloudinary(req.file.buffer);
+
       trust.image = result.secure_url;
       trust.imageId = result.public_id;
     }
 
-    if (title) trust.title = title;
+    if (title) {
+      trust.title = title;
+    }
 
     await trust.save();
     await redis.del(CACHE_KEY);
@@ -129,6 +142,7 @@ export const deleteTrust = async (req, res) => {
     const { id } = req.params;
 
     const trust = await Trust.findById(id);
+
     if (!trust) {
       return res.status(404).json({
         success: false,

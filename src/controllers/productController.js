@@ -3,16 +3,16 @@ import cloudinary from "../config/cloudinary.js";
 import Product from "../models/Product.js";
 import redis from "../config/redis.js";
 
-const PRODUCTS_KEY = "products:all";
-const LATEST_KEY = "products:latest";
+const PRODUCTS_KEY = "Lux:products:all";
+const LATEST_KEY = "Lux:products:latest";
 
 const clearCache = async (id) => {
   try {
     const keys = [PRODUCTS_KEY, LATEST_KEY];
 
     if (id) {
-      keys.push(`product:${id}`);
-      keys.push(`product-details:${id}`);
+      keys.push(`Lux:product:${id}`);
+      keys.push(`Lux:product-details:${id}`);
     }
 
     await redis.del(...keys);
@@ -265,7 +265,7 @@ export const getProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const cacheKey = `product:${id}`;
+    const cacheKey = `Lux:product:${id}`;
 
     const cached = await redis.get(cacheKey);
 
