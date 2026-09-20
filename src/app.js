@@ -28,7 +28,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: allowedOrigins,
-    credentials: true, // يسمح بنقل الكوكيز
+    credentials: true, 
   })
 );
 
@@ -37,7 +37,7 @@ app.use(cookieParser());
 
 
 app.get("/", (req, res) => {
-  res.json({ message: "clothesserver API" });
+  res.json({ message: "portfolio" });
 });
 
 
