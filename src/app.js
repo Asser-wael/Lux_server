@@ -16,7 +16,6 @@ import orderRoutes from "./routes/orderRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
-import settingsRoutes from "./routes/settingsRoutes.js";
 
 import { errorHandler } from "./middlewares/errorHandler.js";
 
@@ -117,7 +116,6 @@ app.use("/api/cart", cartRoutes);
 
 app.use("/api/trust", trustRoutes);
 
-app.use("/api/settings", settingsRoutes);
 
 // =========================
 // Error Handler
