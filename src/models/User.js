@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
@@ -8,8 +9,11 @@ const cartItemSchema = new mongoose.Schema(
       ref: "products",
       required: true,
     },
+
     color: String,
+
     size: String,
+
     quantity: {
       type: Number,
       required: true,
@@ -30,13 +34,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      lowercase: true,
     },
 
     password: {
       type: String,
       required: true,
-      select: false, // مش هيترجع إلا لو عملت .select("+password")
+      select: false,
     },
+
     role: {
       type: String,
       enum: ["user", "admin"],
@@ -75,14 +81,34 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+/* =========================================================
+   HASH PASSWORD
+========================================================= */
+
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
 
-  this.password = await bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(
+    this.password,
+    10
+  );
 });
 
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
+/* =========================================================
+   MATCH PASSWORD
+========================================================= */
+
+userSchema.methods.matchPassword = async function (
+  enteredPassword
+) {
+  if (!enteredPassword || !this.password) {
+    return false;
+  }
+
+  return bcrypt.compare(
+    enteredPassword,
+    this.password
+  );
 };
 
 export default mongoose.model("User", userSchema);
